@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --app-font-size: 17px;
+    font-size: var(--app-font-size);
+  }
+
+  html.font-sm {
+    --app-font-size: 15px;
+  }
+
+  html.font-base {
+    --app-font-size: 17px;
+  }
+
+  html.font-lg {
+    --app-font-size: 19px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* High contrast luxury theme styling */
+  html.dark,
+  body.theme-dark {
+    background-color: #07090e;
+    color: #f1f5f9;
+    color-scheme: dark;
+  }
+
+  html:not(.dark),
+  body.theme-light {
+    background-color: #f8fafc;
+    color: #0f172a;
+    color-scheme: light;
+  }
+}
+
+/* Custom luxury subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* AdSense responsive container normalization - guaranteed anti-clipping */
+ins.adsbygoogle {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: transparent !important;
+}
+
+ins.adsbygoogle iframe {
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+@keyframes progressPulse {
+  0% {
+    width: 10%;
+    transform: translateX(-10%);
+  }
+  50% {
+    width: 75%;
+    transform: translateX(15%);
+  }
+  100% {
+    width: 100%;
+    transform: translateX(0);
+  }
+}
+
+.animate-progress {
+  animation: progressPulse 1.8s ease-in-out infinite;
+}
+
+/* Lightweight Scroll Animation Styles */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+

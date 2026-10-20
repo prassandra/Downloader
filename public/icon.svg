@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="50%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#2563eb" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Squircle rounded background matching header logo exactly -->
+  <rect x="24" y="24" width="464" height="464" rx="140" fill="url(#headerGrad)" />
+
+  <!-- Cloud with Down Arrow matching Header Logo SVG -->
+  <!-- Scaled up from 24x24 viewBox into 512x512 with center at 256, 256 -->
+  <!-- Scale factor = 13.5, translate(256 - 12*13.5, 256 - 12*13.5) = translate(94, 94) -->
+  <g transform="translate(94, 94) scale(13.5)">
+    <!-- Cloud Path -->
+    <path
+      d="M7 16.5A4.5 4.5 0 0 1 7 7.5A6 6 0 0 1 18.5 9A4.5 4.5 0 0 1 17 17.5"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="2.3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Down Arrow Stem -->
+    <path
+      d="M12 12v7"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="2.3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Down Arrow Head -->
+    <path
+      d="m9 16 3 3 3-3"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="2.3"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "name": "DriaSave - Universal Media Downloader",
+  "description": "DriaSave: Tools pengunduh video dan audio cepat beresolusi tinggi dari TikTok, Instagram, YouTube, Facebook, Twitter, dan platform lainnya dengan deteksi carousel instan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

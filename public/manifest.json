@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "DriaSave",
+  "short_name": "DriaSave",
+  "description": "Tools pengunduh video dan audio cepat beresolusi tinggi (1080p, 720p, MP3) dari TikTok, Instagram, YouTube, Facebook, Twitter, dan deteksi slide foto akurat.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090d16",
+  "theme_color": "#2563eb",
+  "categories": ["utilities", "multimedia", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

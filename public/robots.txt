@@ -1,0 +1,19 @@
+# robots.txt for DriaSave (https://save.driacom.com/)
+User-agent: *
+Allow: /
+Allow: /api/
+Allow: /assets/
+Allow: /favicon.ico
+Allow: /sitemap.xml
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Host: https://save.driacom.com
+Sitemap: https://save.driacom.com/sitemap.xml
