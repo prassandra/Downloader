@@ -4,5 +4,6 @@ dist/
 coverage/
 .DS_Store
 *.log
+*-watch.html
 .env*
 !.env.example
