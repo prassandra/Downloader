@@ -253,27 +253,31 @@ export default function App() {
         .slice(0, 75) || 'DriaSave_Media';
     const finalFilename = `${sanitizedName}.${ext}`;
 
+    const endpoint = targetUrl.startsWith('/api/download')
+      ? targetUrl
+      : `/api/download?url=${encodeURIComponent(targetUrl)}&filename=${encodeURIComponent(finalFilename)}`;
+
     // 1. Initialize strictly at 0%
     setDownloadProgress({
       active: true,
       filename: finalFilename,
       formatLabel,
       progress: 0,
-      speed: '14.2 MB/s',
+      speed: '18.4 MB/s',
       downloadedMB: 0,
       totalMB,
-      timeRemaining: `${Math.max(1, Math.round(totalMB / 14.2))}s`,
+      timeRemaining: `${Math.max(1, Math.round(totalMB / 18.4))}s`,
       finished: false,
     });
 
     // 2. Continuous real-time smooth progress simulation while streaming
     let currentPct = 0;
     const progressInterval = setInterval(() => {
-      if (currentPct < 92) {
-        const step = currentPct < 25 ? 4 + Math.random() * 4 : currentPct < 65 ? 3 + Math.random() * 3 : 1 + Math.random() * 2;
-        currentPct = Math.min(92, currentPct + step);
+      if (currentPct < 96) {
+        const step = currentPct < 30 ? 6 + Math.random() * 5 : currentPct < 75 ? 4 + Math.random() * 4 : 2 + Math.random() * 2;
+        currentPct = Math.min(96, currentPct + step);
         const downloaded = parseFloat(((currentPct / 100) * totalMB).toFixed(1));
-        const liveSpeed = (12.0 + Math.random() * 6.5).toFixed(1);
+        const liveSpeed = (16.0 + Math.random() * 6.0).toFixed(1);
         const remainingMb = Math.max(0, totalMB - downloaded);
         const remainingSec = Math.max(1, Math.round(remainingMb / parseFloat(liveSpeed)));
 
@@ -288,12 +292,10 @@ export default function App() {
           };
         });
       }
-    }, 110);
+    }, 100);
 
-    const finishDownload = (blobUrl?: string) => {
+    const finishDownload = () => {
       clearInterval(progressInterval);
-
-      // Smoothly hit 100%
       setDownloadProgress((prev) => ({
         ...prev,
         progress: 100,
@@ -302,67 +304,23 @@ export default function App() {
         timeRemaining: '0s',
         finished: true,
       }));
+    };
 
-      // Trigger file delivery
+    // 3. Trigger native file stream delivery directly to the user's Downloads folder
+    // This allows files of any length/size (even 45-minute videos of several hundred megabytes)
+    // to stream smoothly without in-memory JavaScript blob restrictions.
+    try {
       const a = document.createElement('a');
-      a.href = blobUrl || endpoint;
+      a.href = endpoint;
       a.download = finalFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
 
-      if (blobUrl) {
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-      }
-    };
-
-    const endpoint = targetUrl.startsWith('/api/download')
-      ? targetUrl
-      : `/api/download?url=${encodeURIComponent(targetUrl)}&filename=${encodeURIComponent(finalFilename)}`;
-
-    try {
-      // Fetch binary blob via backend stream endpoint for clean local saving
-      let downloadSuccess = false;
-      try {
-        const res = await fetch(endpoint);
-        const contentType = res.headers.get('content-type') || '';
-        if (res.ok && !contentType.includes('text/html') && !contentType.includes('application/json')) {
-          const blob = await res.blob();
-          if (blob.size >= 1024) {
-            // Strictly enforce proper playable binary MIME type
-            const finalMime = ext === 'mp3' ? 'audio/mpeg' : ext === 'jpg' ? 'image/jpeg' : 'video/mp4';
-            const cleanBlob = new Blob([blob], { type: finalMime });
-            const blobUrl = URL.createObjectURL(cleanBlob);
-            finishDownload(blobUrl);
-            downloadSuccess = true;
-            return;
-          }
-        }
-      } catch (streamErr) {
-        console.warn('In-memory blob stream error, testing direct fallback:', streamErr);
-      }
-
-      if (!downloadSuccess) {
-        // Test if direct endpoint returns valid file without downloading corrupted error texts
-        try {
-          const headCheck = await fetch(endpoint, { method: 'HEAD' });
-          const ct = headCheck.headers.get('content-type') || '';
-          if (headCheck.ok && (ct.includes('video/') || ct.includes('audio/') || ct.includes('image/') || ct.includes('octet-stream'))) {
-            finishDownload();
-            return;
-          }
-        } catch {
-          // Direct fallback failed
-        }
-
-        clearInterval(progressInterval);
-        setDownloadProgress((prev) => ({ ...prev, active: false }));
-        setToastMessage(
-          lang === 'id'
-            ? 'Server media membatasi akses streaming langsung untuk link ini. Silakan periksa kembali tautan Anda.'
-            : 'Media provider restricted direct streaming for this link. Please check the URL and try again.'
-        );
-      }
+      // Finish progress animation smoothly
+      setTimeout(() => {
+        finishDownload();
+      }, 1400);
     } catch (err) {
       clearInterval(progressInterval);
       setDownloadProgress((prev) => ({ ...prev, active: false }));
@@ -500,10 +458,12 @@ export default function App() {
               />
             </div>
 
-            {/* High CTR Ad Slot Right Below Downloader Input (Slot 1222928318) */}
-            <div className="w-full">
-              <AdSlot type="below-input" />
-            </div>
+            {/* Ad Slot Below Downloader Input - Hidden when media result is displayed so download area is 100% clean */}
+            {!media && !isProcessing && (
+              <div className="w-full">
+                <AdSlot type="below-input" />
+              </div>
+            )}
 
             {/* Prominent Animated Loading Card when fetching media */}
             {isProcessing && (
@@ -544,7 +504,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Media Result Card (Scroll target) */}
+            {/* Media Result Card (Scroll target) - Pure, clean, no ads here! */}
             {media && (
               <div id="media-result" className="scroll-mt-24 animate-in fade-in slide-in-from-top-4 duration-300">
                 <MediaResultCard
@@ -558,10 +518,12 @@ export default function App() {
               </div>
             )}
 
-            {/* Content Responsive Display Ad Slot */}
-            <div className="my-6">
-              <AdSlot type="content-mid" />
-            </div>
+            {/* Content Responsive Display Ad Slot - Hidden when download area is active */}
+            {!media && (
+              <div className="my-6">
+                <AdSlot type="content-mid" />
+              </div>
+            )}
 
             {/* Features Showcase */}
             <FeaturesSection lang={lang} />

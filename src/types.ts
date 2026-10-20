@@ -53,6 +53,8 @@ export interface MediaMetadata {
   authorAvatar?: string;
   duration?: string;
   thumbnail: string;
+  sourceResolution?: string;
+  sourcePixels?: number;
   slides?: SlideItem[];
   formats: FormatItem[];
   viewsCount?: string;

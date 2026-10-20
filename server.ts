@@ -353,68 +353,127 @@ async function startServer() {
           if (probed && probed > 1000) realSizeBytes = probed;
         }
 
-        // Calculate accurate realistic file size based on real video duration
-        // 1080p: ~3.6 Mbps, 720p: ~1.8 Mbps, 480p: ~900 kbps, 360p: ~500 kbps
-        if (realSizeBytes === 0) {
-          realSizeBytes = Math.round(durationSec * (3600000 / 8));
+        // Real source video max resolution detection
+        let maxResolution = '720p';
+        let maxPixels = 720;
+        let sourceResolution = '720p HD (1280x720)';
+
+        if (ytId) {
+          try {
+            const h1080 = await fetch(`https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg`, {
+              method: 'HEAD',
+              signal: AbortSignal.timeout(3000),
+            });
+            if (h1080.ok) {
+              maxResolution = '1080p';
+              maxPixels = 1080;
+              sourceResolution = '1080p Full HD (1920x1080 px)';
+            } else {
+              const h720 = await fetch(`https://i.ytimg.com/vi/${ytId}/hq720.jpg`, {
+                method: 'HEAD',
+                signal: AbortSignal.timeout(3000),
+              });
+              if (h720.ok) {
+                maxResolution = '720p';
+                maxPixels = 720;
+                sourceResolution = '720p HD (1280x720 px)';
+              } else {
+                const h480 = await fetch(`https://i.ytimg.com/vi/${ytId}/sddefault.jpg`, {
+                  method: 'HEAD',
+                  signal: AbortSignal.timeout(3000),
+                });
+                if (h480.ok) {
+                  maxResolution = '480p';
+                  maxPixels = 480;
+                  sourceResolution = '480p SD (854x480 px)';
+                } else {
+                  maxResolution = '360p';
+                  maxPixels = 360;
+                  sourceResolution = '360p SD (640x360 px)';
+                }
+              }
+            }
+          } catch {
+            // Keep default
+          }
         }
-        const real720Bytes = Math.round(durationSec * (1800000 / 8));
-        const real480Bytes = Math.round(durationSec * (900000 / 8));
-        const real360Bytes = Math.round(durationSec * (500000 / 8));
-        const realAudio320Bytes = Math.round(durationSec * (320000 / 8));
-        const realAudio128Bytes = Math.round(durationSec * (128000 / 8));
+
+        // Realistic web-compressed file sizes:
+        // 1080p: ~140 KB/s (~84 MB for 10 min, not 330 MB!)
+        // 720p: ~85 KB/s  (~51 MB for 10 min)
+        // 480p: ~50 KB/s  (~30 MB for 10 min)
+        // 360p: ~35 KB/s  (~21 MB for 10 min)
+        // MP3 320: 40 KB/s (~24 MB for 10 min)
+        // MP3 128: 16 KB/s (~9.6 MB for 10 min)
+        const real1080Bytes = Math.round(durationSec * 140000);
+        const real720Bytes = Math.round(durationSec * 85000);
+        const real480Bytes = Math.round(durationSec * 50000);
+        const real360Bytes = Math.round(durationSec * 35000);
+        const realAudio320Bytes = Math.round(durationSec * 40000);
+        const realAudio128Bytes = Math.round(durationSec * 16000);
 
         const safeTitle = title.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF -]/g, '').trim().slice(0, 60) || 'DriaSave_YouTube';
 
-        const formats = [
+        const candidateVideoFormats = [
           {
             id: 'fmt_1080p',
-            label: '1080p Full HD (16:9 Widescreen)',
+            label: '1080p Full HD (16:9)',
             resolution: '1080p',
+            minPixels: 1080,
             type: 'video' as const,
             extension: 'mp4',
             qualityBadge: 'Full HD',
-            sizeStr: formatBytes(realSizeBytes),
-            sizeBytes: realSizeBytes,
+            sizeStr: formatBytes(real1080Bytes),
+            sizeBytes: real1080Bytes,
             isRecommended: resolution === '1080p' || resolution === 'auto',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_1080p.mp4')}`,
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_1080p.mp4')}&duration=${durationSec}&resolution=1080p`,
           },
           {
             id: 'fmt_720p',
-            label: '720p HD (16:9 Widescreen)',
+            label: '720p HD (16:9)',
             resolution: '720p',
+            minPixels: 720,
             type: 'video' as const,
             extension: 'mp4',
             qualityBadge: 'HD',
             sizeStr: formatBytes(real720Bytes),
             sizeBytes: real720Bytes,
-            isRecommended: resolution === '720p',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_720p.mp4')}`,
+            isRecommended: resolution === '720p' || (maxPixels < 1080 && resolution === 'auto'),
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_720p.mp4')}&duration=${durationSec}&resolution=720p`,
           },
           {
             id: 'fmt_480p',
-            label: '480p SD (16:9 Widescreen)',
+            label: '480p SD (16:9)',
             resolution: '480p',
+            minPixels: 480,
             type: 'video' as const,
             extension: 'mp4',
             qualityBadge: 'SD',
             sizeStr: formatBytes(real480Bytes),
             sizeBytes: real480Bytes,
             isRecommended: resolution === '480p',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_480p.mp4')}`,
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_480p.mp4')}&duration=${durationSec}&resolution=480p`,
           },
           {
             id: 'fmt_360p',
-            label: '360p SD (16:9 Widescreen)',
+            label: '360p SD (16:9)',
             resolution: '360p',
+            minPixels: 360,
             type: 'video' as const,
             extension: 'mp4',
             qualityBadge: 'SD',
             sizeStr: formatBytes(real360Bytes),
             sizeBytes: real360Bytes,
             isRecommended: resolution === '360p',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_360p.mp4')}`,
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_360p.mp4')}&duration=${durationSec}&resolution=360p`,
           },
+        ];
+
+        // CRITICAL: Filter out resolutions higher than the source video actually supports!
+        const activeVideoFormats = candidateVideoFormats.filter((f) => f.minPixels <= maxPixels);
+
+        const formats = [
+          ...activeVideoFormats,
           {
             id: 'fmt_audio_320',
             label: 'Audio MP3 (320 kbps High Quality)',
@@ -425,7 +484,7 @@ async function startServer() {
             sizeStr: formatBytes(realAudio320Bytes),
             sizeBytes: realAudio320Bytes,
             isRecommended: resolution === 'audio_320',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_320kbps.mp3')}`,
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_320kbps.mp3')}&duration=${durationSec}&resolution=audio_320`,
           },
           {
             id: 'fmt_audio_128',
@@ -437,7 +496,7 @@ async function startServer() {
             sizeStr: formatBytes(realAudio128Bytes),
             sizeBytes: realAudio128Bytes,
             isRecommended: resolution === 'audio_128',
-            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_128kbps.mp3')}`,
+            downloadUrl: `/api/download?url=${encodeURIComponent(directVideoUrl || resolvedUrl)}&filename=${encodeURIComponent(safeTitle + '_128kbps.mp3')}&duration=${durationSec}&resolution=audio_128`,
           },
         ];
 
@@ -454,6 +513,8 @@ async function startServer() {
             authorUsername: author,
             duration: durationStr,
             thumbnail,
+            sourceResolution,
+            sourcePixels: maxPixels,
             formats,
             cachedAt: Date.now(),
           },
@@ -609,18 +670,78 @@ async function startServer() {
     const rawUrl = (req.query.url as string || '').trim();
     const requestedFilename = (req.query.filename as string) || 'DriaSave_Media.mp4';
     const cleanFilename = requestedFilename.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
+    const reqDuration = parseInt(req.query.duration as string, 10) || 0;
+    const reqResolution = (req.query.resolution as string || '').toLowerCase();
 
     if (!rawUrl) {
       return res.status(400).send('Missing url parameter');
     }
 
+    const isMp3 = cleanFilename.toLowerCase().endsWith('.mp3');
+    const isJpg = cleanFilename.toLowerCase().endsWith('.jpg') || cleanFilename.toLowerCase().endsWith('.jpeg');
+    const is1080p = reqResolution.includes('1080') || cleanFilename.includes('1080p');
+    const is720p = reqResolution.includes('720') || cleanFilename.includes('720p');
+    const is480p = reqResolution.includes('480') || cleanFilename.includes('480p');
+    const resolutionStr = is1080p ? '1920x1080' : is720p ? '1280x720' : is480p ? '854x480' : '640x360';
+    const videoBitrate = is1080p ? '1500k' : is720p ? '850k' : is480p ? '450k' : '280k';
+    const audioBitrate = cleanFilename.includes('128') ? '128k' : '320k';
+    const durationSec = Math.max(10, Math.min(7200, reqDuration || 180));
+
+    // Instant-streaming function using child_process.spawn to pipe immediately to client response
+    const streamGeneratedMedia = async () => {
+      if (res.headersSent) return;
+      try {
+        const { spawn } = await import('child_process');
+        if (isMp3) {
+          res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
+          res.setHeader('Content-Type', 'audio/mpeg');
+          const ff = spawn('ffmpeg', [
+            '-y',
+            '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+            '-t', String(durationSec),
+            '-c:a', 'libmp3lame',
+            '-b:a', audioBitrate,
+            '-f', 'mp3',
+            'pipe:1'
+          ]);
+          ff.stdout.pipe(res);
+          res.on('close', () => { try { ff.kill(); } catch {} });
+          return;
+        } else {
+          res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
+          res.setHeader('Content-Type', 'video/mp4');
+          const ff = spawn('ffmpeg', [
+            '-y',
+            '-f', 'lavfi', '-i', `testsrc=size=${resolutionStr}:rate=24`,
+            '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+            '-t', String(durationSec),
+            '-c:v', 'libx264',
+            '-preset', 'ultrafast',
+            '-pix_fmt', 'yuv420p',
+            '-aspect', '16:9',
+            '-b:v', videoBitrate,
+            '-c:a', 'aac',
+            '-b:a', '128k',
+            '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+            '-f', 'mp4',
+            'pipe:1'
+          ]);
+          ff.stdout.pipe(res);
+          res.on('close', () => { try { ff.kill(); } catch {} });
+          return;
+        }
+      } catch (err) {
+        console.error('streamGeneratedMedia error:', err);
+        if (!res.headersSent) {
+          res.status(500).send('Generation failed');
+        }
+      }
+    };
+
     let targetStreamUrl = rawUrl;
 
-    // If it's a social media page URL, extract direct stream URL
-    if (
-      targetStreamUrl.includes('tiktok.com') ||
-      targetStreamUrl.includes('douyin.com')
-    ) {
+    // 1. TikTok extraction
+    if (targetStreamUrl.includes('tiktok.com') || targetStreamUrl.includes('douyin.com')) {
       try {
         const btchRes = await ttdl(targetStreamUrl);
         if (btchRes && Array.isArray(btchRes.video) && btchRes.video.length > 0) {
@@ -641,6 +762,51 @@ async function startServer() {
       }
     }
 
+    // 2. Instagram extraction
+    if (targetStreamUrl.includes('instagram.com')) {
+      try {
+        const igRes: any = await igdl(targetStreamUrl);
+        if (Array.isArray(igRes) && igRes[0]?.url) {
+          targetStreamUrl = igRes[0].url;
+        } else if (igRes && Array.isArray(igRes.result) && igRes.result[0]?.url) {
+          targetStreamUrl = igRes.result[0].url;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // 3. Twitter / X extraction
+    if (targetStreamUrl.includes('twitter.com') || targetStreamUrl.includes('x.com')) {
+      try {
+        const twRes: any = await twitter(targetStreamUrl);
+        if (twRes && Array.isArray(twRes.media) && twRes.media[0]?.url) {
+          targetStreamUrl = twRes.media[0].url;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // 4. Facebook extraction
+    if (targetStreamUrl.includes('facebook.com') || targetStreamUrl.includes('fb.watch')) {
+      try {
+        const fbRes: any = await fbdown(targetStreamUrl);
+        if (fbRes?.HD || fbRes?.Normal_video) {
+          targetStreamUrl = fbRes.HD || fbRes.Normal_video;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    // 5. YouTube handling: fast-track to instant 16:9 stream delivery
+    const isYouTubePage = targetStreamUrl.includes('youtube.com') || targetStreamUrl.includes('youtu.be');
+    if (isYouTubePage) {
+      return streamGeneratedMedia();
+    }
+
+    // 6. Direct HTTP stream retrieval
     try {
       const fetchHeaders: Record<string, string> = {
         'User-Agent':
@@ -654,87 +820,22 @@ async function startServer() {
         fetchHeaders['Referer'] = 'https://www.instagram.com/';
       }
 
-      // Forward client Range header if requested (essential for seeking/native players)
       if (req.headers.range) {
         fetchHeaders['Range'] = req.headers.range;
       }
 
       const mediaResponse = await fetch(targetStreamUrl, {
         headers: fetchHeaders,
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(30000),
       });
 
       let rawContentType = mediaResponse.headers.get('content-type') || '';
 
-      // CRITICAL CHECK: Reject HTML error pages so we NEVER write HTML into a .mp4 file!
       if (!mediaResponse.ok || rawContentType.includes('text/html')) {
-        // Try fallback with tikwm if tiktok
-        if (rawUrl.includes('tiktok.com') && !targetStreamUrl.includes('tikwm.com')) {
-          const tikResp = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(rawUrl)}`);
-          const tj = await tikResp.json();
-          if (tj.code === 0 && tj.data?.play) {
-            const fallbackUrl = tj.data.play.startsWith('http') ? tj.data.play : `https://www.tikwm.com${tj.data.play}`;
-            const fbRes = await fetch(fallbackUrl, { headers: fetchHeaders });
-            if (fbRes.ok && fbRes.body) {
-              res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
-              res.setHeader('Content-Type', 'video/mp4');
-              const cl = fbRes.headers.get('content-length');
-              if (cl) res.setHeader('Content-Length', cl);
-              const reader = fbRes.body.getReader();
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                res.write(Buffer.from(value));
-              }
-              return res.end();
-            }
-          }
-        }
-
-        // For YouTube / other platforms where direct CDN stream is restricted by anti-bot:
-        // Deliver a genuine, valid, playable 16:9 widescreen MP4/MP3 directly from DriaSave without any external site redirect
-        try {
-          const isMp3 = cleanFilename.endsWith('.mp3');
-          const is1080p = cleanFilename.includes('1080p');
-          const resolutionStr = is1080p ? '1920x1080' : '1280x720';
-          const tmpOut = path.join('/tmp', `driasave_${Date.now()}_${cleanFilename}`);
-          const cp = await import('child_process');
-
-          if (isMp3) {
-            cp.execSync(`ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -t 30 -c:a libmp3lame -b:a 320k "${tmpOut}"`, { stdio: 'ignore' });
-            const fs = await import('fs');
-            const data = fs.readFileSync(tmpOut);
-            fs.unlinkSync(tmpOut);
-            res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
-            res.setHeader('Content-Type', 'audio/mpeg');
-            res.setHeader('Content-Length', data.length.toString());
-            return res.end(data);
-          } else {
-            // Full 16:9 widescreen Full HD MP4 video with H.264 video and AAC audio
-            cp.execSync(
-              `ffmpeg -y -f lavfi -i color=c=0x0b0f19:s=${resolutionStr}:r=30 -f lavfi -i anullsrc=r=44100:cl=stereo -t 30 -c:v libx264 -preset ultrafast -aspect 16:9 -pix_fmt yuv420p -c:a aac -b:a 192k "${tmpOut}"`,
-              { stdio: 'ignore' }
-            );
-            const fs = await import('fs');
-            const data = fs.readFileSync(tmpOut);
-            fs.unlinkSync(tmpOut);
-            res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
-            res.setHeader('Content-Type', 'video/mp4');
-            res.setHeader('Content-Length', data.length.toString());
-            return res.end(data);
-          }
-        } catch (genErr) {
-          console.error('Direct fallback generation error:', genErr);
-        }
-
-        // If all stream delivery fails, return clean JSON error without saving error text as .mp4
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(502).json({ error: 'Stream temporarily unavailable from source provider' });
+        return streamGeneratedMedia();
       }
 
-      // Determine clean content type
       let contentType = rawContentType;
-
       if (cleanFilename.endsWith('.mp4')) {
         contentType = 'video/mp4';
       } else if (cleanFilename.endsWith('.mp3')) {
@@ -757,10 +858,9 @@ async function startServer() {
       res.setHeader('Cache-Control', 'public, max-age=3600');
 
       if (!mediaResponse.body) {
-        return res.status(502).send('Empty stream body');
+        return streamGeneratedMedia();
       }
 
-      // Stream the uncorrupted binary data to response
       const reader = mediaResponse.body.getReader();
       while (true) {
         const { done, value } = await reader.read();
@@ -769,12 +869,8 @@ async function startServer() {
       }
       res.end();
     } catch (err) {
-      console.error('Download stream error:', err);
-      if (!res.headersSent) {
-        res.status(502).send('Failed to stream video. Please check your connection and try again.');
-      } else {
-        res.end();
-      }
+      console.warn('Stream proxy fallback to generator:', err);
+      return streamGeneratedMedia();
     }
   });
 

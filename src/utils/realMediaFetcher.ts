@@ -301,68 +301,116 @@ export async function fetchAccurateMedia(
       // Fallback
     }
 
+    // Source resolution detection
+    let maxPixels = 720;
+    let sourceResolution = '720p HD (1280x720 px)';
+    try {
+      const h1080 = await fetch(`https://i.ytimg.com/vi/${info.extractedId}/maxresdefault.jpg`, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(3000),
+      });
+      if (h1080.ok) {
+        maxPixels = 1080;
+        sourceResolution = '1080p Full HD (1920x1080 px)';
+      } else {
+        const h720 = await fetch(`https://i.ytimg.com/vi/${info.extractedId}/hq720.jpg`, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(3000),
+        });
+        if (h720.ok) {
+          maxPixels = 720;
+          sourceResolution = '720p HD (1280x720 px)';
+        } else {
+          const h480 = await fetch(`https://i.ytimg.com/vi/${info.extractedId}/sddefault.jpg`, {
+            method: 'HEAD',
+            signal: AbortSignal.timeout(3000),
+          });
+          if (h480.ok) {
+            maxPixels = 480;
+            sourceResolution = '480p SD (854x480 px)';
+          } else {
+            maxPixels = 360;
+            sourceResolution = '360p SD (640x360 px)';
+          }
+        }
+      }
+    } catch {
+      // Keep default
+    }
+
     const ytCover = `https://i.ytimg.com/vi/${info.extractedId}/hqdefault.jpg`;
-    // Realistic bitrates: 1080p ~3.6 Mbps, 720p ~1.8 Mbps, 480p ~900 kbps, 360p ~500 kbps, audio ~320 kbps
-    const base1080Size = Math.round(durationSec * (3600000 / 8));
-    const base720Size = Math.round(durationSec * (1800000 / 8));
-    const base480Size = Math.round(durationSec * (900000 / 8));
-    const base360Size = Math.round(durationSec * (500000 / 8));
-    const baseAudio320Size = Math.round(durationSec * (320000 / 8));
-    const baseAudio128Size = Math.round(durationSec * (128000 / 8));
+    // Realistic web bitrates: 1080p ~140 KB/s, 720p ~85 KB/s, 480p ~50 KB/s, 360p ~35 KB/s
+    const base1080Size = Math.round(durationSec * 140000);
+    const base720Size = Math.round(durationSec * 85000);
+    const base480Size = Math.round(durationSec * 50000);
+    const base360Size = Math.round(durationSec * 35000);
+    const baseAudio320Size = Math.round(durationSec * 40000);
+    const baseAudio128Size = Math.round(durationSec * 16000);
     const safeYtTitle = ytTitle.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1E00-\u1EFF -]/g, '').trim().slice(0, 50) || 'DriaSave_YouTube';
 
-    const formats: FormatItem[] = [
+    const candidateVideoFormats = [
       {
         id: 'fmt_1080p',
-        label: '1080p Full HD (16:9 Widescreen)',
+        label: '1080p Full HD (16:9)',
         resolution: '1080p',
-        type: 'video',
+        minPixels: 1080,
+        type: 'video' as const,
         extension: 'mp4',
         qualityBadge: 'Full HD',
         sizeStr: formatBytes(base1080Size),
         sizeBytes: base1080Size,
         isRecommended: targetResolution === '1080p' || targetResolution === 'auto',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_1080p.mp4')}`,
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_1080p.mp4')}&duration=${durationSec}&resolution=1080p`,
       },
       {
         id: 'fmt_720p',
-        label: '720p HD (16:9 Widescreen)',
+        label: '720p HD (16:9)',
         resolution: '720p',
-        type: 'video',
+        minPixels: 720,
+        type: 'video' as const,
         extension: 'mp4',
         qualityBadge: 'HD',
         sizeStr: formatBytes(base720Size),
         sizeBytes: base720Size,
-        isRecommended: targetResolution === '720p',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_720p.mp4')}`,
+        isRecommended: targetResolution === '720p' || (maxPixels < 1080 && targetResolution === 'auto'),
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_720p.mp4')}&duration=${durationSec}&resolution=720p`,
       },
       {
         id: 'fmt_480p',
-        label: '480p SD (16:9 Widescreen)',
+        label: '480p SD (16:9)',
         resolution: '480p',
-        type: 'video',
+        minPixels: 480,
+        type: 'video' as const,
         extension: 'mp4',
         qualityBadge: 'SD',
         sizeStr: formatBytes(base480Size),
         sizeBytes: base480Size,
         isRecommended: targetResolution === '480p',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_480p.mp4')}`,
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_480p.mp4')}&duration=${durationSec}&resolution=480p`,
       },
       {
         id: 'fmt_360p',
-        label: '360p SD (16:9 Widescreen)',
+        label: '360p SD (16:9)',
         resolution: '360p',
-        type: 'video',
+        minPixels: 360,
+        type: 'video' as const,
         extension: 'mp4',
         qualityBadge: 'SD',
         sizeStr: formatBytes(base360Size),
         sizeBytes: base360Size,
         isRecommended: targetResolution === '360p',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_360p.mp4')}`,
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_360p.mp4')}&duration=${durationSec}&resolution=360p`,
       },
+    ];
+
+    // Filter by maxPixels
+    const activeVideoFormats = candidateVideoFormats.filter((f) => f.minPixels <= maxPixels);
+
+    const formats: FormatItem[] = [
+      ...activeVideoFormats,
       {
         id: 'fmt_audio_320',
-        label: 'Audio MP3 (320 kbps)',
+        label: 'Audio MP3 (320 kbps HQ)',
         resolution: '320 kbps',
         type: 'audio',
         extension: 'mp3',
@@ -370,7 +418,7 @@ export async function fetchAccurateMedia(
         sizeStr: formatBytes(baseAudio320Size),
         sizeBytes: baseAudio320Size,
         isRecommended: targetResolution === 'audio_320',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_320kbps.mp3')}`,
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_320kbps.mp3')}&duration=${durationSec}&resolution=audio_320`,
       },
       {
         id: 'fmt_audio_128',
@@ -382,7 +430,7 @@ export async function fetchAccurateMedia(
         sizeStr: formatBytes(baseAudio128Size),
         sizeBytes: baseAudio128Size,
         isRecommended: targetResolution === 'audio_128',
-        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_128kbps.mp3')}`,
+        downloadUrl: `/api/download?url=${encodeURIComponent(cleanUrl)}&filename=${encodeURIComponent(safeYtTitle + '_128kbps.mp3')}&duration=${durationSec}&resolution=audio_128`,
       },
     ];
 
@@ -395,8 +443,10 @@ export async function fetchAccurateMedia(
       title: ytTitle,
       author: ytAuthor,
       authorUsername: `@${ytAuthor.toLowerCase().replace(/[^a-z0-9_]/g, '')}`,
-      duration: '03:45',
+      duration: durationStr,
       thumbnail: ytCover,
+      sourceResolution,
+      sourcePixels: maxPixels,
       formats,
       viewsCount: '1.2M',
       likesCount: '85K',

@@ -110,3 +110,27 @@ ins.adsbygoogle iframe {
   }
 }
 
+/* Strictly eliminate bottom sticky ads, anchor ads, and bottom floating ad overlays */
+ins.adsbygoogle[data-anchor-status],
+.google-anno-bottom-anchor,
+.adsbygoogle-noablate,
+iframe[id^="aswift_"][style*="bottom: 0px"],
+iframe[id^="aswift_"][style*="bottom:0px"],
+iframe[id^="aswift_"][style*="bottom: 0"],
+div[id^="google_ads_iframe"][style*="bottom"],
+div[style*="position: fixed"][style*="bottom: 0"],
+div[style*="position:fixed"][style*="bottom:0"],
+div[style*="position: fixed"][style*="bottom:0"],
+div[style*="bottom: 0px"][style*="position: fixed"],
+div[style*="bottom:0px"][style*="position:fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+

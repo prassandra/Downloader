@@ -207,6 +207,12 @@ export const MediaResultCard: React.FC<MediaResultCardProps> = ({
               <Tv className="w-3.5 h-3.5 text-blue-500" />
               <span>{isId ? 'Format Layar Lebar 16:9' : '16:9 Widescreen'}</span>
             </span>
+            {media.sourceResolution && (
+              <span className="px-3 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black flex items-center gap-1.5 border border-indigo-200/60 dark:border-indigo-800/60">
+                <Tv className="w-3.5 h-3.5 text-indigo-500" />
+                <span>{isId ? `Sumber Asli: ${media.sourceResolution}` : `Source: ${media.sourceResolution}`}</span>
+              </span>
+            )}
             <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-emerald-500" />
               <span>{videoFormats[0]?.sizeStr || 'Ukuran Real'}</span>

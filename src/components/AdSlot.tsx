@@ -106,8 +106,8 @@ export const AdSlot: React.FC<AdSlotProps> = ({ type, className = '', slotId: pr
     return () => observer.disconnect();
   }, []);
 
-  // If AdSense specifically flags as unfilled, collapse completely
-  if (isUnfilled) {
+  // Strictly disable anchor bottom ads
+  if (type === 'anchor-bottom' || isUnfilled) {
     return null;
   }
 
