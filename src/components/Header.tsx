@@ -17,6 +17,7 @@ import {
   Mail,
   ShieldCheck,
   AlertTriangle,
+  Scissors,
 } from 'lucide-react';
 import { FontSizeSetting, LanguageSetting, ThemeSetting } from '../types';
 import { translations } from '../utils/translations';

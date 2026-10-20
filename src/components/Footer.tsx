@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Scissors } from 'lucide-react';
 import { LanguageSetting } from '../types';
 import { translations } from '../utils/translations';
 import { ModalType } from './InfoModals';
@@ -87,10 +87,44 @@ export const Footer: React.FC<FooterProps> = ({ lang, onOpenModal }) => {
 
           {/* Tools Driacom */}
           <div className="space-y-3 md:col-span-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-              {t.footerToolsHeader}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                {t.footerToolsHeader}
+              </h4>
+              <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-400">
+                Ekosistem Kreator Driacom
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* DriaClip - Primary Clipper Tool */}
+              <a
+                href="https://clip.driacom.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-indigo-50/40 to-white dark:from-violet-950/40 dark:via-[#111827] dark:to-[#111827] border border-violet-300 dark:border-violet-700/80 hover:border-violet-500 transition-all group flex flex-col justify-between shadow-2xs relative overflow-hidden"
+              >
+                <div>
+                  <div className="flex items-center justify-between text-slate-900 dark:text-white font-bold text-xs sm:text-sm">
+                    <span className="flex items-center gap-1.5 text-violet-700 dark:text-violet-300">
+                      <Scissors className="w-3.5 h-3.5 text-violet-500" />
+                      <span>{t.footerToolsDriaClip}</span>
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug font-normal">
+                    {t.footerToolsDriaClipDesc}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[11px] font-mono text-violet-600 dark:text-violet-400 font-bold">
+                    clip.driacom.com
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-violet-600 text-white uppercase">
+                    Clipper
+                  </span>
+                </div>
+              </a>
+
               {/* DriaConvert */}
               <a
                 href="https://convert.driacom.com"
@@ -103,11 +137,11 @@ export const Footer: React.FC<FooterProps> = ({ lang, onOpenModal }) => {
                     <span>{t.footerToolsDriaConvert}</span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-normal font-normal">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug font-normal">
                     {t.footerToolsDriaConvertDesc}
                   </p>
                 </div>
-                <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold mt-3">
+                <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold mt-3">
                   convert.driacom.com
                 </span>
               </a>
@@ -124,11 +158,11 @@ export const Footer: React.FC<FooterProps> = ({ lang, onOpenModal }) => {
                     <span>{t.footerToolsDriaSeo}</span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-normal font-normal">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug font-normal">
                     {t.footerToolsDriaSeoDesc}
                   </p>
                 </div>
-                <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold mt-3">
+                <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold mt-3">
                   seo.driacom.com
                 </span>
               </a>
